@@ -4,13 +4,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kaleidoscope</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <title>Kaleidoscope Canvas</title>
   <style>
     body {
       margin: 0;
-      background: black;
       overflow: hidden;
+      background: black;
     }
 
     #saveBtn {
@@ -27,7 +26,7 @@
     }
 
     #title {
-      transition: all 1s ease-in-out;
+      transition: all .75s ease-in-out;
       width: 100%;
       position: absolute;
       top: 0;
@@ -35,11 +34,6 @@
       font-size: 1.5em;
       color: white;
       text-align: center;
-    }
-
-    a {
-      color: white;
-      margin: 0 .5em 0 0.1em;
     }
 
     #name {
@@ -51,106 +45,177 @@
       color: white;
     }
 
-    svg {
-      -webkit-filter: invert(100%);
-      filter: invert(100%);
+    a {
+      color: white;
+      margin: 0 .5em 0 0.1em;
     }
+
+           svg {
+            -webkit-filter: invert(100%);
+            filter: invert(100%);
+        }
   </style>
 </head>
 
 <body>
   <div id="title">Move on the screen</div>
   <div id="name">
-    <a href="https://github.com/Koushikphy">
-      <svg xmlns="http://www.w3.org/2000/svg" width="0.9em" height="100%" viewBox="0 0 24 24">
-        <path
-          d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-      </svg>
-      Koushikphy
-    </a>
+        <a href="https://github.com/Koushikphy">
+            <svg xmlns="http://www.w3.org/2000/svg" width="0.9em" height="100%" viewBox="0 0 24 24">
+                <path
+                    d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+            </svg>
+            Koushikphy
+        </a>
   </div>
   <button id="saveBtn">Download</button>
+  <canvas id="kaleidoscope"></canvas>
 
   <script>
+
+    const canvas = document.getElementById('kaleidoscope');
+    const ctx = canvas.getContext('2d');
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    canvas.width = width;
+    canvas.height = height;
+
     let symmetry = 6;
-    let angle;
+    let angle = (360 / symmetry) * Math.PI / 180;
 
-    function setup() {
-      createCanvas(windowWidth, windowHeight);
-      angleMode(DEGREES);
-      colorMode(HSB, 360, 255, 255);
-      background(0);
-      angle = 360 / symmetry;
+    let isDrawing = false;
+    let pmouse = { x: 0, y: 0 };
 
-      const saveBtn = document.getElementById('saveBtn');
-      saveBtn.addEventListener('click', () => {
-        saveCanvas('kaleidoscope_pattern', 'png');
-      });
+    const title = document.getElementById('title');
+
+    function resizeCanvas() {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      canvas.width = width;
+      canvas.height = height;
+      ctx.fillStyle = 'black';
+      ctx.fillRect(0, 0, width, height);
     }
 
+    window.addEventListener('resize', resizeCanvas);
 
-    function mousePressed() {
-      title.style.opacity = 0
+    function getMousePos(e) {
+      return {
+        x: e.clientX,
+        y: e.clientY
+      };
     }
 
-    function mouseReleased() {
-      title.style.opacity = 1
+    function getTouchPos(touch) {
+      return {
+        x: touch.clientX,
+        y: touch.clientY
+      };
     }
 
+    function drawSymmetryLine(x1, y1, x2, y2, hue) {
+      ctx.save();
+      ctx.translate(width / 2, height / 2);
+      ctx.strokeStyle = `hsl(${hue}, 100%, 50%)`;
+      ctx.lineWidth = 1;
+      ctx.shadowBlur = 20;
+      ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
 
-    function draw() {
-      //blendMode(ADD);
-      translate(width / 2, height / 2);
+      for (let i = 0; i < symmetry; i++) {
+        ctx.rotate(angle);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
 
-      if (mouseIsPressed) {
-        let mx = mouseX - width / 2;
-        let my = mouseY - height / 2;
-        let pmx = pmouseX - width / 2;
-        let pmy = pmouseY - height / 2;
-
-        let hue = frameCount % 360;
-
-        // Glow effect
-        drawingContext.shadowBlur = 20;
-        drawingContext.shadowColor = color(hue, 255, 255);
-
-        stroke(hue, 255, 255);
-        strokeWeight(2);
-
-        for (let i = 0; i < symmetry; i++) {
-          rotate(angle);
-          line(pmx, pmy, mx, my);
-
-          push();
-          scale(1, -1);
-          line(pmx, pmy, mx, my);
-          pop();
-        }
+        ctx.save();
+        ctx.scale(1, -1);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+        ctx.restore();
       }
+
+      ctx.restore();
     }
 
-    function keyPressed() {
-      if (key === 'c' || key === 'C') {
-        resetMatrix()
-        background(0);
+    // Mouse Events
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      const { x, y } = getMousePos(e);
+      pmouse = { x: x - width / 2, y: y - height / 2 };
+      title.style.opacity = 0;
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDrawing = false;
+      title.style.opacity = 1;
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDrawing) return;
+      const { x, y } = getMousePos(e);
+      const mx = x - width / 2;
+      const my = y - height / 2;
+
+      const hue = Date.now() / 20 % 360;
+      drawSymmetryLine(pmouse.x, pmouse.y, mx, my, hue);
+      pmouse = { x: mx, y: my };
+    });
+
+    // Touch Events
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isDrawing = true;
+      const touch = e.touches[0];
+      const { x, y } = getTouchPos(touch);
+      pmouse = { x: x - width / 2, y: y - height / 2 };
+      title.style.opacity = 0;
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+      e.preventDefault();
+      isDrawing = false;
+      title.style.opacity = 1;
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+      e.preventDefault();
+      if (!isDrawing) return;
+      const touch = e.touches[0];
+      const { x, y } = getTouchPos(touch);
+      const mx = x - width / 2;
+      const my = y - height / 2;
+
+      const hue = Date.now() / 20 % 360;
+      drawSymmetryLine(pmouse.x, pmouse.y, mx, my, hue);
+      pmouse = { x: mx, y: my };
+    }, { passive: false });
+
+    // Clear canvas with 'C'
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'c' || e.key === 'C') {
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = 'black';
+        ctx.fillRect(0, 0, width, height);
       }
-    }
+    });
 
-    function windowResized() {
-      resizeCanvas(windowWidth, windowHeight);
-      background(0);
-    }
-    
-  </script>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-QGX2F1FTNX"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
-    gtag('js', new Date());
+    // Save Image
+    document.getElementById('saveBtn').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'kaleidoscope_pattern.png';
+      link.href = canvas.toDataURL();
+      link.click();
+    });
 
-    gtag('config', 'G-QGX2F1FTNX');
+    // Initial background
+    ctx.fillStyle = 'black';
+    ctx.fillRect(0, 0, width, height);
   </script>
+
 </body>
 
 </html>
